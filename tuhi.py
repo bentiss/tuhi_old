@@ -139,10 +139,12 @@ class Tuhi(GObject.Object):
         self.bluez = BlueZDeviceManager()
         self.bluez.connect('device-added', self._on_bluez_device_added)
 
+        self.server.start()
+
         self.devices = {}
 
     def _on_tuhi_bus_name_acquired(self, dbus_server):
-        self.bluez.connect_to_bluez()
+        self.server.bluez = self.bluez
 
     def _on_bluez_device_added(self, manager, bluez_device):
         if bluez_device.vendor_id != WACOM_COMPANY_ID:

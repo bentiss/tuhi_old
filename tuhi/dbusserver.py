@@ -136,6 +136,10 @@ class TuhiDBusServer(GObject.Object):
     def __init__(self):
         GObject.Object.__init__(self)
         self._devices = []
+        self._bluez = None
+
+    def start(self):
+        """Starts the DBus server."""
         self._dbus = Gio.bus_own_name(Gio.BusType.SESSION,
                                       BUS_NAME,
                                       Gio.BusNameOwnerFlags.NONE,
@@ -175,6 +179,15 @@ class TuhiDBusServer(GObject.Object):
 
     def _property_write_cb(self):
         pass
+
+    @property
+    def bluez(self):
+        return self._bluez
+
+    @bluez.setter
+    def bluez(self, bluez):
+        self._bluez = bluez
+        self._bluez.connect_to_bluez()
 
     def cleanup(self):
         Gio.bus_unown_name(self._dbus)
