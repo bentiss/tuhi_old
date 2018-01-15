@@ -96,6 +96,7 @@ class TuhiDevice(GObject.Object):
 
         pairingmode = len(manufacturer_data) == 4
 
+        self._tuhi_dbus_device.pairingmode = pairingmode
         return pairingmode
 
     def retrieve_data(self):

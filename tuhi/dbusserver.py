@@ -36,6 +36,9 @@ INTROSPECTION_XML = """
     <property type='u' name='DrawingsAvailable' access='read'>
       <annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='true'/>
     </property>
+    <property type='u' name='PairingMode' access='read'>
+      <annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='true'/>
+    </property>
 
     <method name='GetJSONData'>
       <arg name='index' type='u' direction='in'/>
@@ -66,6 +69,7 @@ class TuhiDBusDevice(GObject.Object):
         self.btaddr = device.address
         self.width, self.height = 0, 0
         self.drawings = []
+        self.pairingmode = False
         objpath = device.address.replace(':', '_')
         self.objpath = "{}/{}".format(BASE_PATH, objpath)
 
@@ -103,6 +107,9 @@ class TuhiDBusDevice(GObject.Object):
             return GLib.Variant.new_tuple(w, h)
         elif propname == 'DrawingsAvailable':
             return GLib.Variant.new_uint32(len(self.drawings))
+        elif propname == 'PairingMode':
+            print(self)
+            return GLib.Variant.new_uint32(self.pairingmode)
 
         return None
 
