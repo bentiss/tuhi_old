@@ -82,17 +82,17 @@ class TuhiDevice(GObject.Object):
 
         bluez_device.connect('connected', self._on_bluez_device_connected)
         bluez_device.connect('disconnected', self._on_bluez_device_disconnected)
-        bluez_device.connect_device()
+        self._bluez_device = bluez_device
+
+    def retrieve_data(self):
+        self._bluez_device.connect_device()
 
     def _on_bluez_device_connected(self, bluez_device):
         logger.debug('{}: connected'.format(bluez_device.address))
         self._wacom_device.start()
 
     def _on_bluez_device_disconnected(self, bluez_device):
-        # FIXME: immediately try to reconnect, at least until the DBusServer
-        # is hooked up correctly
         logger.debug('{}: disconnected'.format(bluez_device.address))
-        bluez_device.connect_device()
 
     def _on_drawing_received(self, device, drawing):
         logger.debug('Drawing received')
@@ -138,6 +138,7 @@ class Tuhi(GObject.Object):
         self.server.connect('bus-name-acquired', self._on_tuhi_bus_name_acquired)
         self.bluez = BlueZDeviceManager()
         self.bluez.connect('device-added', self._on_bluez_device_added)
+        self.bluez.connect('device-updated', self._on_bluez_device_updated)
 
         self.server.start()
 
@@ -146,13 +147,25 @@ class Tuhi(GObject.Object):
     def _on_tuhi_bus_name_acquired(self, dbus_server):
         self.server.bluez = self.bluez
 
+    def get_tuhi_device(self, bluez_device):
+        if bluez_device.address not in self.devices:
+            tuhi_dbus_device = self.server.create_device(bluez_device)
+            d = TuhiDevice(bluez_device, tuhi_dbus_device)
+            self.devices[bluez_device.address] = d
+
+        return self.devices[bluez_device.address]
+
     def _on_bluez_device_added(self, manager, bluez_device):
         if bluez_device.vendor_id != WACOM_COMPANY_ID:
             return
 
-        tuhi_dbus_device = self.server.create_device(bluez_device)
-        d = TuhiDevice(bluez_device, tuhi_dbus_device)
-        self.devices[bluez_device.address] = d
+        self.get_tuhi_device(bluez_device).retrieve_data()
+
+    def _on_bluez_device_updated(self, manager, bluez_device):
+        if bluez_device.vendor_id != WACOM_COMPANY_ID:
+            return
+
+        self.get_tuhi_device(bluez_device).retrieve_data()
 
 
 def main(args):
