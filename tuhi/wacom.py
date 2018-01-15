@@ -134,6 +134,8 @@ class WacomDevice(GObject.Object):
         self.height = WACOM_SLATE_HEIGHT
         self.name = device.name
 
+        self.working = False
+
         device.connect_gatt_value(WACOM_CHRC_LIVE_PEN_DATA_UUID,
                                   self._on_pen_data_changed)
         device.connect_gatt_value(WACOM_OFFLINE_CHRC_PEN_DATA_UUID,
@@ -570,7 +572,11 @@ class WacomDevice(GObject.Object):
 
     def run(self):
         logger.debug('{}: starting'.format(self.device.address))
-        self.retrieve_data()
+        self.working = True
+        try:
+            self.retrieve_data()
+        finally:
+            self.working = False
 
     def start(self):
         self.thread = threading.Thread(target=self.run)

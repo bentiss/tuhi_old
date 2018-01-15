@@ -89,7 +89,8 @@ class TuhiDevice(GObject.Object):
 
     def _on_bluez_device_connected(self, bluez_device):
         logger.debug('{}: connected'.format(bluez_device.address))
-        self._wacom_device.start()
+        if not self._wacom_device.working:
+            self._wacom_device.start()
 
     def _on_bluez_device_disconnected(self, bluez_device):
         logger.debug('{}: disconnected'.format(bluez_device.address))
