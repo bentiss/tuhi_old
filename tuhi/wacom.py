@@ -121,6 +121,8 @@ class WacomDevice(GObject.Object):
     __gsignals__ = {
         "drawing":
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        "done":
+            (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self, device):
@@ -577,6 +579,7 @@ class WacomDevice(GObject.Object):
             self.retrieve_data()
         finally:
             self.working = False
+            self.emit("done")
 
     def start(self):
         self.thread = threading.Thread(target=self.run)

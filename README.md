@@ -52,7 +52,7 @@ org.freedesktop.tuhi1.Manager
       expires, a ListenComplete signal is sent indicating success or error.
 
       When a compatible device appears (button pressed), the daemon connects
-      to it and downloads all drawings from the device.
+      to it, downloads all drawings from the device and disconnects itself.
       If successfull, the drawings are deleted from the device.
       The data is held by the daemon in non-persistent storage until the
       daemon is stopped or we run out of memory, whichever happens earlier.
