@@ -24,6 +24,11 @@ INTROSPECTION_XML = """
     <property type='ao' name='Devices' access='read'>
       <annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='true'/>
     </property>
+
+    <method name='Listen'>
+      <annotation name='org.freedesktop.DBus.Method.NoReply' value='true'/>
+    </method>
+
   </interface>
 
   <interface name='org.freedesktop.tuhi1.Device'>
@@ -32,10 +37,6 @@ INTROSPECTION_XML = """
     <property type='u' name='DrawingsAvailable' access='read'>
       <annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='true'/>
     </property>
-
-    <method name='Listen'>
-      <annotation name='org.freedesktop.DBus.Method.NoReply' value='true'/>
-    </method>
 
     <method name='GetJSONData'>
       <arg name='index' type='u' direction='in'/>
@@ -85,9 +86,7 @@ class TuhiDBusDevice(GObject.Object):
         if interface != INTF_DEVICE:
             return None
 
-        if methodname == 'Listen':
-            self._listen()
-        elif methodname == 'GetJSONData':
+        if methodname == 'GetJSONData':
             json = GLib.Variant.new_string(self._json_data(args))
             invocation.return_value(GLib.Variant.new_tuple(json))
 
@@ -109,11 +108,6 @@ class TuhiDBusDevice(GObject.Object):
         return None
 
     def _property_write_cb(self):
-        pass
-
-    def _listen(self):
-        # FIXME: start listen asynchronously
-        # FIXME: update property when listen finishes
         pass
 
     def _json_data(self, args):
@@ -165,8 +159,12 @@ class TuhiDBusServer(GObject.Object):
     def _bus_name_lost(self, connection, name):
         pass
 
-    def _method_cb(self):
-        pass
+    def _method_cb(self, connection, sender, objpath, interface, methodname, args, invocation):
+        if interface != INTF_MANAGER:
+            return None
+
+        if methodname == 'Listen':
+            self._listen()
 
     def _property_read_cb(self, connection, sender, objpath, interface, propname):
         if interface != INTF_MANAGER:
@@ -188,6 +186,10 @@ class TuhiDBusServer(GObject.Object):
     def bluez(self, bluez):
         self._bluez = bluez
         self._bluez.connect_to_bluez()
+
+    def _listen(self):
+        logger.debug('calling listen() on adapters')
+        self.bluez.listen()
 
     def cleanup(self):
         Gio.bus_unown_name(self._dbus)

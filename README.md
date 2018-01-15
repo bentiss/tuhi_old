@@ -33,10 +33,39 @@ The following interfaces are provided:
 ```
 org.freedesktop.tuhi1.Manager
 
-   Property: Devices (ao)
+  Property: Devices (ao)
 
-   Array of object paths to known (previously paired, but not necessarily
-   connected) devices.
+      Array of object paths to known (previously paired, but not necessarily
+      connected) devices.
+
+  Property: Listening (b)
+      Indicates whether the daemon is currently listening for device events.
+
+      This property is set to True when a Listen() request initiates the
+      search for device connections. When the Listen() request completes
+      upon timeout, the property is set to False.
+      Read-only
+
+  Method: Listen() -> ()
+      Listen for data from this host. This method starts listening for
+      events on the device for an unspecified timeout. When the timeout
+      expires, a ListenComplete signal is sent indicating success or error.
+
+      When a compatible device appears (button pressed), the daemon connects
+      to it and downloads all drawings from the device.
+      If successfull, the drawings are deleted from the device.
+      The data is held by the daemon in non-persistent storage until the
+      daemon is stopped or we run out of memory, whichever happens earlier.
+      Use GetJSONData() on individual devices to retrieve the data from the
+      daemon.
+
+      When drawings become available from a device, the DrawingsAvailable
+      property on the device updates to the number of available drawings.
+
+      Calling Listen() before a previous call has completed is silently
+      ignored and does not reset the timeout.
+
+      Returns: 0 on success or a negative errno on failure
 
 org.freedesktop.tuhi1.Device
 
@@ -59,37 +88,6 @@ org.freedesktop.tuhi1.Device
       An integer indicating the number of drawings available. Drawings are
       zero-indexed, see GetJSONData().
       Read-only
-
-  Property: Listening (b)
-      Indicates whether the daemon is currently listening for the device.
-
-      This property is set to True when a Listen() request initiates the
-      search for device connections. When the Listen() request completes
-      upon timeout, the property is set to False.
-      Read-only
-
-  Method: Listen() -> ()
-      Listen for data from this device. This method starts listening for
-      events on the device for an unspecified timeout. When the timeout
-      expires, a ListenComplete signal is sent indicating success or error.
-
-      This function requires the device to be connected and may require some
-      interactivity (e.g. the user may need to press the sync button).
-
-      When the device connects, the daemon downloads all drawings from the
-      device. If successfull, the drawings are deleted from the device. The
-      data is held by the daemon in non-persistent storage until the daemon
-      is stopped or we run out of memory, whichever happens earlier.  Use
-      GetJSONData() to retrieve the data from the daemon.
-
-      When drawings become available from the device, the DrawingsAvailable
-      property updates to the number of available drawings.
-
-      When this function is called multiple times, any new data is appended
-      to the existing list of drawings. Calling Listen() before a previous
-      call has completed is silently ignored and does not reset the timeout.
-
-      Returns: 0 on success or a negative errno on failure
 
   Method: GetJSONData(index: u) -> (s)
       Returns a JSON file with the drawings specified by the index argument.

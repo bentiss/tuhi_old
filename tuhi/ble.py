@@ -239,6 +239,7 @@ class BlueZDeviceManager(GObject.Object):
     def __init__(self, **kwargs):
         GObject.Object.__init__(self, **kwargs)
         self.devices = []
+        self.adapters = []
 
     def connect_to_bluez(self):
         """
@@ -281,6 +282,9 @@ class BlueZDeviceManager(GObject.Object):
         objpath = obj.get_object_path()
         logger.debug('Object removed: {}'.format(objpath))
 
+        if obj.get_interface(ORG_BLUEZ_ADAPTER1) is not None:
+            self.adapters.remove(obj)
+
     def _process_object(self, obj):
         """Process a single DBusProxyObject"""
 
@@ -296,7 +300,15 @@ class BlueZDeviceManager(GObject.Object):
     def _process_adapter(self, obj):
         objpath = obj.get_object_path()
         logger.debug('Adapter: {}'.format(objpath))
-        # FIXME: call StartDiscovery if we want to pair
+        self.adapters.append(obj)
+
+    def listen(self):
+        """Start Discovery"""
+        for a in self.adapters:
+            objpath = a.get_object_path()
+            logger.debug('Listening on: {}'.format(objpath))
+            i = a.get_interface(ORG_BLUEZ_ADAPTER1)
+            i.StartDiscovery()
 
     def _process_device(self, obj):
         dev = BlueZDevice(self._om, obj)
