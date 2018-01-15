@@ -97,6 +97,16 @@ org.freedesktop.tuhi1.Device
 
       Returns a string representing the JSON data from the last drawings or
       the empty string if no data is available or the index is invalid.
+
+  Method: Pair() -> ()
+      Execute a pairing on this device. The device needs to be already in
+      the pairing mode before calling this.
+
+      When the Pair() function is called, it initializes the pairing by
+      registering the host on the device, but the user needs to provide a
+      confirmation by physically pressing on the button.
+      FIXME: This is currently notified by a debug output but should be
+      a DBus signal towards the application.
 ```
 
 JSON File Format

@@ -45,6 +45,10 @@ INTROSPECTION_XML = """
       <arg name='json' type='s' direction='out'/>
     </method>
 
+    <method name='Pair'>
+      <annotation name='org.freedesktop.DBus.Method.NoReply' value='true'/>
+    </method>
+
     <signal name='ListenComplete'>
        <arg name='status' type='i' />
     </signal>
@@ -62,6 +66,11 @@ class TuhiDBusDevice(GObject.Object):
     Class representing a DBus object for a Tuhi device. This class only
     handles the DBus bits, communication with the device is done elsewhere.
     """
+    __gsignals__ = {
+        "pairing-requested":
+            (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
+
     def __init__(self, device, connection):
         GObject.Object.__init__(self)
 
@@ -92,6 +101,8 @@ class TuhiDBusDevice(GObject.Object):
         if methodname == 'GetJSONData':
             json = GLib.Variant.new_string(self._json_data(args))
             invocation.return_value(GLib.Variant.new_tuple(json))
+        elif methodname == 'Pair':
+            self._pair()
 
     def _property_read_cb(self, connection, sender, objpath, interface, propname):
         if interface != INTF_DEVICE:
@@ -119,6 +130,10 @@ class TuhiDBusDevice(GObject.Object):
     def _json_data(self, args):
         index = args[0]
         return self.drawings[index].json()
+
+    def _pair(self):
+        # FIXME: should call pairing on the wacom object
+        self.emit('pairing-requested')
 
     def add_drawing(self, drawing):
         self.drawings.append(drawing)

@@ -81,6 +81,7 @@ class TuhiDevice(GObject.Object):
     def __init__(self, bluez_device, tuhi_dbus_device):
         GObject.Object.__init__(self)
         self._tuhi_dbus_device = tuhi_dbus_device
+        self._tuhi_dbus_device.connect('pairing-requested', self._on_pairing)
         self._wacom_device = WacomDevice(bluez_device)
         self._wacom_device.connect('drawing', self._on_drawing_received)
         self._wacom_device.connect('done', self._on_fetching_finished)
@@ -89,6 +90,7 @@ class TuhiDevice(GObject.Object):
         bluez_device.connect('connected', self._on_bluez_device_connected)
         bluez_device.connect('disconnected', self._on_bluez_device_disconnected)
         self._bluez_device = bluez_device
+        self.pairing = False
 
     @property
     def pairingmode(self):
@@ -102,10 +104,19 @@ class TuhiDevice(GObject.Object):
     def retrieve_data(self):
         self._bluez_device.connect_device()
 
+    def _on_pairing(self, bluez_device):
+        logger.debug('{}: pairing requested'.format(self._bluez_device))
+        self.pairing = True
+        self._bluez_device.connect_device()
+
     def _on_bluez_device_connected(self, bluez_device):
         logger.debug('{}: connected'.format(bluez_device.address))
         if not self._wacom_device.working:
-            self._wacom_device.start()
+            if not self.pairing:
+                self._wacom_device.start()
+            else:
+                self._wacom_device.start_pairing()
+                self.pairing = False
 
     def _on_bluez_device_disconnected(self, bluez_device):
         logger.debug('{}: disconnected'.format(bluez_device.address))

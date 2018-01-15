@@ -97,6 +97,10 @@ class WacomEEAGAINException(WacomException):
     pass
 
 
+class WacomWrongModeException(WacomException):
+    pass
+
+
 class WacomNotPairedException(WacomException):
     pass
 
@@ -241,6 +245,8 @@ class WacomDevice(GObject.Object):
             raise WacomNotPairedException(f"wrong device, please redo pairing")
         if data[0] == 0x02:
             raise WacomEEAGAINException(f"unexpected answer: {data[0]:02x}")
+        if data[0] == 0x01:
+            raise WacomWrongModeException(f"wrong device mode")
 
     def send_nordic_command_sync(self,
                                  command,
@@ -571,6 +577,35 @@ class WacomDevice(GObject.Object):
         except WacomEEAGAINException:
             logger.warning("no data, please make sure the LED is blue and the button is pressed to switch it back to green")
 
+    def wacom_register(self):
+        self.register_connection()
+        logger.info("please press the button on the device")
+        data = self.wait_nordic_data([0xe4, 0xb3], 10)
+        if data.opcode == 0xb3:
+            # generic ACK
+            self.check_ack(data)
+        self.set_time()
+        self.read_time()
+        self.ec_command()
+        self.bb_command()
+        w = self.get_dimensions('width')
+        h = self.get_dimensions('height')
+        if self.width != w or self.height != h:
+            logger.error(f'Uncompatible dimensions: {w}x{h}')
+        fw_high = self.get_firmware_version(0)
+        fw_low = self.get_firmware_version(1)
+        logger.info(f'firmware is {fw_high}-{fw_low}')
+        logger.info("pairing completed")
+
+    def run_pairing(self):
+        logger.debug('{}: pairing'.format(self.device.address))
+        self.working = True
+        try:
+            self.wacom_register()
+        finally:
+            self.working = False
+            self.emit("done")
+
     def run(self):
         logger.debug('{}: starting'.format(self.device.address))
         self.working = True
@@ -582,4 +617,8 @@ class WacomDevice(GObject.Object):
 
     def start(self):
         self.thread = threading.Thread(target=self.run)
+        self.thread.start()
+
+    def start_pairing(self):
+        self.thread = threading.Thread(target=self.run_pairing)
         self.thread.start()
