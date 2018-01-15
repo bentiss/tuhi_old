@@ -15,7 +15,6 @@ import logging
 
 from gi.repository import GObject, Gio, GLib
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dbus')
 
 INTROSPECTION_XML = """

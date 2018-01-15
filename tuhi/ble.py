@@ -13,7 +13,6 @@
 import logging
 from gi.repository import GObject, Gio
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('ble')
 
 ORG_BLUEZ_GATTCHARACTERISTIC1 = 'org.bluez.GattCharacteristic1'

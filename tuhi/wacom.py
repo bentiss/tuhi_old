@@ -18,7 +18,6 @@ import threading
 import time
 from gi.repository import GObject
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('wacom')
 
 WACOM_COMPANY_ID = 0x4755

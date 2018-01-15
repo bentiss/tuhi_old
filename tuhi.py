@@ -11,6 +11,7 @@
 #  GNU General Public License for more details.
 #
 
+import argparse
 import json
 import logging
 import sys
@@ -19,8 +20,12 @@ from gi.repository import GObject
 from tuhi.dbusserver import TuhiDBusServer
 from tuhi.ble import BlueZDeviceManager
 from tuhi.wacom import WacomDevice, Stroke
+from tuhi.ble import logger as ble_logger
+from tuhi.wacom import logger as wacom_logger
+from tuhi.dbusserver import logger as dbusserver_logger
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(format='%(levelname)s: %(name)s: %(message)s',
+                    level=logging.INFO)
 logger = logging.getLogger('tuhi')
 
 WACOM_COMPANY_ID = 0x4755
@@ -137,12 +142,13 @@ class Tuhi(GObject.Object):
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
-    def __init__(self):
+    def __init__(self, debug):
         GObject.Object.__init__(self)
         self.server = TuhiDBusServer()
         self.server.connect('bus-name-acquired', self._on_tuhi_bus_name_acquired)
         self.bluez = BlueZDeviceManager()
         self.bluez.connect('device-updated', self._on_bluez_device_updated)
+        self.always_listening = debug
 
         self.server.start()
 
@@ -150,6 +156,9 @@ class Tuhi(GObject.Object):
 
     def _on_tuhi_bus_name_acquired(self, dbus_server):
         self.server.bluez = self.bluez
+
+        if self.always_listening:
+            self.server._listen()
 
     def get_tuhi_device(self, bluez_device):
         if bluez_device.address not in self.devices:
@@ -167,7 +176,23 @@ class Tuhi(GObject.Object):
 
 
 def main(args):
-    Tuhi()
+    desc = "Daemon to extract the pen stroke data from Wacom SmartPad devices"
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('-v', '--verbose',
+                        help='Show some debugging informations',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--debug',
+                        help='debugging mode, for knowledgeable users only',
+                        action='store_true',
+                        default=False)
+
+    ns = parser.parse_args(args[1:])
+    if ns.verbose or ns.debug:
+        for l in [logger, ble_logger, wacom_logger, dbusserver_logger]:
+            l.setLevel(logging.DEBUG)
+
+    Tuhi(ns.debug)
     try:
         GObject.MainLoop().run()
     except KeyboardInterrupt:
