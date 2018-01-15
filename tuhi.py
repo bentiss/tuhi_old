@@ -90,6 +90,14 @@ class TuhiDevice(GObject.Object):
         bluez_device.connect('disconnected', self._on_bluez_device_disconnected)
         self._bluez_device = bluez_device
 
+    @property
+    def pairingmode(self):
+        manufacturer_data = self._bluez_device.get_manufacturer_data(WACOM_COMPANY_ID)
+
+        pairingmode = len(manufacturer_data) == 4
+
+        return pairingmode
+
     def retrieve_data(self):
         self._bluez_device.connect_device()
 
@@ -172,7 +180,11 @@ class Tuhi(GObject.Object):
         if bluez_device.vendor_id != WACOM_COMPANY_ID:
             return
 
-        self.get_tuhi_device(bluez_device).retrieve_data()
+        tuhi_dev = self.get_tuhi_device(bluez_device)
+
+        # device is in normal mode, waiting for sync
+        if not tuhi_dev.pairingmode:
+            tuhi_dev.retrieve_data()
 
 
 def main(args):

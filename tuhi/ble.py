@@ -11,7 +11,7 @@
 #  GNU General Public License for more details.
 
 import logging
-from gi.repository import GObject, Gio
+from gi.repository import GObject, Gio, GLib
 
 logger = logging.getLogger('ble')
 
@@ -135,6 +135,12 @@ class BlueZDevice(GObject.Object):
         md = self.interface.get_cached_property('ManufacturerData')
         if md is not None:
             return md.keys()[0]
+        return None
+
+    def get_manufacturer_data(self, vendor_id):
+        md = self.interface.get_cached_property('ManufacturerData')
+        if md is not None and vendor_id in md.keys():
+            return md[vendor_id]
         return None
 
     def resolve(self, om):
