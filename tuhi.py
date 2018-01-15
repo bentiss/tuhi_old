@@ -142,7 +142,6 @@ class Tuhi(GObject.Object):
         self.server = TuhiDBusServer()
         self.server.connect('bus-name-acquired', self._on_tuhi_bus_name_acquired)
         self.bluez = BlueZDeviceManager()
-        self.bluez.connect('device-added', self._on_bluez_device_added)
         self.bluez.connect('device-updated', self._on_bluez_device_updated)
 
         self.server.start()
@@ -159,12 +158,6 @@ class Tuhi(GObject.Object):
             self.devices[bluez_device.address] = d
 
         return self.devices[bluez_device.address]
-
-    def _on_bluez_device_added(self, manager, bluez_device):
-        if bluez_device.vendor_id != WACOM_COMPANY_ID:
-            return
-
-        self.get_tuhi_device(bluez_device).retrieve_data()
 
     def _on_bluez_device_updated(self, manager, bluez_device):
         if bluez_device.vendor_id != WACOM_COMPANY_ID:

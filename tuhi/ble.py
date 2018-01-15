@@ -230,8 +230,10 @@ class BlueZDevice(GObject.Object):
             if properties['ServicesResolved']:
                 self.emit('connected')
         else:
-            # FIXME: should we only match on 'RSSI' and 'ManufacturerData'?
-            self.emit('updated')
+            # if RSSI is invalidated, it means the discovery ended
+            if 'RSSI' not in invalidated_properties:
+                # FIXME: should we only match on 'RSSI' and 'ManufacturerData'?
+                self.emit('updated')
 
     def connect_gatt_value(self, uuid, callback):
         """
