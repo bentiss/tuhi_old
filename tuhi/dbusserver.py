@@ -164,6 +164,7 @@ class TuhiDBusServer(GObject.Object):
 
         if methodname == 'Listen':
             self._listen()
+            invocation.return_value()
 
     def _property_read_cb(self, connection, sender, objpath, interface, propname):
         if interface != INTF_MANAGER:
