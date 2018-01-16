@@ -148,6 +148,7 @@ class Tuhi(GObject.Object):
         self.server.connect('bus-name-acquired', self._on_tuhi_bus_name_acquired)
         self.bluez = BlueZDeviceManager()
         self.bluez.connect('device-updated', self._on_bluez_device_updated)
+        self.bluez.connect('listening-timer-expired', self._on_listening_timer_expired)
         self.always_listening = debug_mode
 
         self.server.start()
@@ -158,7 +159,14 @@ class Tuhi(GObject.Object):
         self.server.bluez = self.bluez
 
         if self.always_listening:
-            self.server._listen()
+            # the device advertises for 5 seconds, using two times as the timeout
+            self.server._listen(10)
+
+    def _on_listening_timer_expired(self, bluez):
+        self.server._stop_listening()
+
+        if self.always_listening:
+            self.server._listen(10)
 
     def get_tuhi_device(self, bluez_device):
         if bluez_device.address not in self.devices:

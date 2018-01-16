@@ -262,6 +262,8 @@ class BlueZDeviceManager(GObject.Object):
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
         "device-updated":
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
+        "listening-timer-expired":
+            (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self, **kwargs):
@@ -336,7 +338,26 @@ class BlueZDeviceManager(GObject.Object):
         logger.debug('Adapter: {}'.format(objpath))
         self.adapters.append(obj)
 
-    def listen(self):
+    def stop_listening(self):
+        """Stop the discovery"""
+        for a in self.adapters:
+            objpath = a.get_object_path()
+            i = a.get_interface(ORG_BLUEZ_ADAPTER1)
+
+            try:
+                i.StopDiscovery()
+                logger.debug('{}: Stopped listening'.format(objpath))
+            except GLib.Error as e:
+                    if (e.domain == 'g-io-error-quark' and
+                            e.code == Gio.IOErrorEnum.DBUS_ERROR and
+                            Gio.dbus_error_get_remote_error(e) == 'org.bluez.Error.Failed'):
+                        logger.debug('{}: Already stopped listening'.format(objpath))
+
+    def _listen_timeout_expired(self):
+        self.emit("listening-timer-expired")
+        return False
+
+    def listen(self, timeout=0):
         """Start Discovery"""
         for a in self.adapters:
             objpath = a.get_object_path()
@@ -349,6 +370,9 @@ class BlueZDeviceManager(GObject.Object):
                         e.code == Gio.IOErrorEnum.DBUS_ERROR and
                         Gio.dbus_error_get_remote_error(e) == 'org.bluez.Error.InProgress'):
                     logger.debug('{}: Already listening'.format(objpath))
+        if timeout >= 0:
+            logger.debug('Setting the timeout to {}'.format(timeout))
+            GObject.timeout_add_seconds(timeout, self._listen_timeout_expired)
 
     def _process_device(self, obj):
         dev = BlueZDevice(self._om, obj)

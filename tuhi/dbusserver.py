@@ -23,6 +23,9 @@ INTROSPECTION_XML = """
     <property type='ao' name='Devices' access='read'>
       <annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='true'/>
     </property>
+    <property type='b' name='Listening' access='read'>
+      <annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='true'/>
+    </property>
 
     <method name='Listen'>
       <annotation name='org.freedesktop.DBus.Method.NoReply' value='true'/>
@@ -130,6 +133,7 @@ class TuhiDBusServer(GObject.Object):
         GObject.Object.__init__(self)
         self._devices = []
         self._bluez = None
+        self._listening = False
 
     def start(self):
         """Starts the DBus server."""
@@ -163,7 +167,7 @@ class TuhiDBusServer(GObject.Object):
             return None
 
         if methodname == 'Listen':
-            self._listen()
+            self._listen(30)
             invocation.return_value()
 
     def _property_read_cb(self, connection, sender, objpath, interface, propname):
@@ -172,6 +176,8 @@ class TuhiDBusServer(GObject.Object):
 
         if propname == 'Devices':
             return GLib.Variant.new_objv([d.objpath for d in self._devices])
+        elif propname == 'Listening':
+            return GLib.Variant.new_boolean(self._listening)
 
         return None
 
@@ -187,9 +193,15 @@ class TuhiDBusServer(GObject.Object):
         self._bluez = bluez
         self._bluez.connect_to_bluez()
 
-    def _listen(self):
+    def _listen(self, timeout=0):
         logger.debug('calling listen() on adapters')
-        self.bluez.listen()
+        self.bluez.listen(timeout)
+        self._listening = True
+
+    def _stop_listening(self):
+        logger.debug('calling stop_listening() on adapters')
+        self.bluez.stop_listening()
+        self._listening = False
 
     def cleanup(self):
         Gio.bus_unown_name(self._dbus)
