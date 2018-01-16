@@ -142,13 +142,13 @@ class Tuhi(GObject.Object):
             (GObject.SIGNAL_RUN_FIRST, None, (GObject.TYPE_PYOBJECT,)),
     }
 
-    def __init__(self, debug):
+    def __init__(self, debug_mode=False):
         GObject.Object.__init__(self)
         self.server = TuhiDBusServer()
         self.server.connect('bus-name-acquired', self._on_tuhi_bus_name_acquired)
         self.bluez = BlueZDeviceManager()
         self.bluez.connect('device-updated', self._on_bluez_device_updated)
-        self.always_listening = debug
+        self.always_listening = debug_mode
 
         self.server.start()
 
@@ -192,7 +192,7 @@ def main(args):
         for l in [logger, ble_logger, wacom_logger, dbusserver_logger]:
             l.setLevel(logging.DEBUG)
 
-    Tuhi(ns.debug)
+    Tuhi(debug_mode=ns.debug)
     try:
         GObject.MainLoop().run()
     except KeyboardInterrupt:
