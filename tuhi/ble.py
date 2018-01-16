@@ -11,7 +11,7 @@
 #  GNU General Public License for more details.
 
 import logging
-from gi.repository import GObject, Gio
+from gi.repository import GObject, Gio, GLib
 
 logger = logging.getLogger('ble')
 
@@ -338,9 +338,15 @@ class BlueZDeviceManager(GObject.Object):
         """Start Discovery"""
         for a in self.adapters:
             objpath = a.get_object_path()
-            logger.debug('Listening on: {}'.format(objpath))
             i = a.get_interface(ORG_BLUEZ_ADAPTER1)
-            i.StartDiscovery()
+            try:
+                i.StartDiscovery()
+                logger.debug('{}: Started listening'.format(objpath))
+            except GLib.Error as e:
+                if (e.domain == 'g-io-error-quark' and
+                        e.code == Gio.IOErrorEnum.DBUS_ERROR and
+                        Gio.dbus_error_get_remote_error(e) == 'org.bluez.Error.InProgress'):
+                    logger.debug('{}: Already listening'.format(objpath))
 
     def _process_device(self, obj):
         dev = BlueZDevice(self._om, obj)
