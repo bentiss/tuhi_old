@@ -115,7 +115,8 @@ class BlueZDevice(GObject.Object):
         self.characteristics = {}
         self.resolve(om)
         self.interface.connect('g-properties-changed', self._on_properties_changed)
-        if self.interface.get_cached_property('Connected').get_boolean() and self.interface.get_cached_property('ServicesResolved').get_boolean():
+        if (self.interface.get_cached_property('Connected').get_boolean() and
+                self.interface.get_cached_property('ServicesResolved').get_boolean()):
             self.emit('connected')
 
     @property
@@ -186,7 +187,8 @@ class BlueZDevice(GObject.Object):
         asynchronous and returns immediately.
         """
         i = self.obj.get_interface(ORG_BLUEZ_DEVICE1)
-        if i.get_cached_property('Connected').get_boolean() and i.get_cached_property('ServicesResolved').get_boolean():
+        if (i.get_cached_property('Connected').get_boolean() and
+                i.get_cached_property('ServicesResolved').get_boolean()):
             logger.info('{}: Device is already connected'.format(self.address))
             self.emit('connected')
             return
